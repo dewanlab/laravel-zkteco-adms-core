@@ -1,0 +1,22 @@
+name: Feature Request
+description: Suggest an idea or new hardware command for this package
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please describe the proposed feature or ZKTeco ADMS protocol command extension.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Use Case
+      description: What hardware scenario or integration are you trying to solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution / Command Syntax
+      description: Provide the command syntax or proposed PHP API.
+    validations:
+      required: true

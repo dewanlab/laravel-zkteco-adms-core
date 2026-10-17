@@ -1,0 +1,10 @@
+providers:
+  - DewanLab\LaravelZktecoAdmsCore\LaravelZktecoAdmsCoreServiceProvider
+
+migrations:
+  - database/migrations
+
+env:
+  DB_CONNECTION: testing
+  ZKTECO_ADMS_TIMEZONE: UTC
+  ZKTECO_ADMS_DELAY: 30

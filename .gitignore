@@ -1,0 +1,13 @@
+/vendor/
+/node_modules/
+.phpunit.result.cache
+.pest
+.php-cs-fixer.cache
+.env
+.env.*
+!.env.example
+.idea/
+.vscode/
+*.log
+*.sqlite
+*.sqlite-*

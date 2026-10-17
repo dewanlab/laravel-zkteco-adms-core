@@ -1,0 +1,30 @@
+name: Bug Report
+description: Create a report to help us improve
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug!
+  - type: input
+    id: device_model
+    attributes:
+      label: "ZKTeco Device Model & Firmware"
+      description: "e.g. SpeedFace-V5L, MB560-VL, InBio Pro (Firmware: 3.2.0)"
+      placeholder: "e.g. SpeedFace V5L / Pushver 3.2.0"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the bug encountered and provide relevant log entries or raw wire payloads.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Steps or commands to reproduce the behavior.
+    validations:
+      required: true

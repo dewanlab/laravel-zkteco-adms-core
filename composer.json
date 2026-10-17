@@ -1,0 +1,69 @@
+{
+  "name": "dewanlab/laravel-zkteco-adms-core",
+  "description": "Comprehensive ZKTeco ADMS (Push Protocol) Core implementation for Laravel, supporting biometrics, door access control, and dynamic handshake state management.",
+  "keywords": [
+    "dewanlab",
+    "laravel",
+    "zkteco",
+    "adms",
+    "push-protocol",
+    "biometrics",
+    "access-control",
+    "attendance",
+    "iclock"
+  ],
+  "homepage": "https://github.com/dewanlab/laravel-zkteco-adms-core",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Abdullah Dewan",
+      "email": "hello@abdullahdewan.com",
+      "homepage": "https://abdullahdewan.com",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": "^8.2",
+    "illuminate/contracts": "^10.0|^11.0|^12.0|^13.0",
+    "illuminate/support": "^10.0|^11.0|^12.0|^13.0"
+  },
+  "require-dev": {
+    "larastan/larastan": "^3.0|^2.0",
+    "laravel/pint": "^1.14",
+    "orchestra/testbench": "^8.0|^9.0|^10.0",
+    "pestphp/pest": "^2.34|^3.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "DewanLab\\LaravelZktecoAdmsCore\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "DewanLab\\LaravelZktecoAdmsCore\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "vendor/bin/pest",
+    "format": "vendor/bin/pint",
+    "types:check": "vendor/bin/phpstan analyse"
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "DewanLab\\LaravelZktecoAdmsCore\\LaravelZktecoAdmsCoreServiceProvider"
+      ],
+      "aliases": {
+        "ZktecoAdms": "DewanLab\\LaravelZktecoAdmsCore\\Facades\\ZktecoAdms"
+      }
+    }
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}

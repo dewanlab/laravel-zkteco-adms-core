@@ -81,6 +81,64 @@ describe('Step 5: HTTP Endpoints & Device Controller Extreme Verification', func
             ->and(ZkAttendanceLog::count())->toBe(2);
     });
 
+    test('ATTLOG ingestion normalizes occurred_at to host app timezone while preserving raw recorded_at and honoring config timezone fallback', function () {
+        config(['app.timezone' => 'UTC']);
+
+        // 1. Terminal with explicit timezone (Asia/Dhaka = UTC+6)
+        $deviceDhaka = ZkDevice::create([
+            'serial_number' => 'DEV_DHAKA_01',
+            'timezone' => 'Asia/Dhaka',
+            'status' => 'online',
+        ]);
+
+        $rawAttLog = "1001\t2026-11-12 19:48:55\t0\t1\t0\n";
+
+        $this->call(
+            'POST',
+            '/iclock/cdata?SN=DEV_DHAKA_01&table=ATTLOG',
+            [],
+            [],
+            [],
+            ['CONTENT_TYPE' => 'text/plain'],
+            $rawAttLog
+        )->assertOk();
+
+        $logDhaka = ZkAttendanceLog::where('pin', '1001')->firstOrFail();
+
+        // Raw wall-clock matches hardware terminal exactly
+        expect($logDhaka->getRawOriginal('recorded_at'))->toBe('2026-11-12 19:48:55')
+            // Normalized occurred_at matches physical instant in UTC (19:48:55 - 6 hours = 13:48:55)
+            ->and($logDhaka->occurred_at?->setTimezone('UTC')->format('Y-m-d H:i:s'))->toBe('2026-11-12 13:48:55')
+            // JSON serialization contains universal ISO-8601 Zulu timestamp
+            ->and($logDhaka->toArray()['occurred_at'])->toContain('2026-11-12T13:48:55');
+
+        // 2. Terminal without timezone falls back to config('zkteco-adms-core.handshake.timezone')
+        config(['zkteco-adms-core.handshake.timezone' => 'Asia/Dubai']);
+        $deviceFallback = ZkDevice::create([
+            'serial_number' => 'DEV_FALLBACK_01',
+            'timezone' => null,
+            'status' => 'online',
+        ]);
+
+        $rawAttLogFallback = "2001\t2026-11-12 17:48:55\t0\t1\t0\n";
+
+        $this->call(
+            'POST',
+            '/iclock/cdata?SN=DEV_FALLBACK_01&table=ATTLOG',
+            [],
+            [],
+            [],
+            ['CONTENT_TYPE' => 'text/plain'],
+            $rawAttLogFallback
+        )->assertOk();
+
+        $logFallback = ZkAttendanceLog::where('pin', '2001')->firstOrFail();
+
+        // 17:48:55 Dubai (UTC+4) should normalize to 13:48:55 UTC
+        expect($logFallback->getRawOriginal('recorded_at'))->toBe('2026-11-12 17:48:55')
+            ->and($logFallback->occurred_at?->setTimezone('UTC')->format('Y-m-d H:i:s'))->toBe('2026-11-12 13:48:55');
+    });
+
     test('OPERLOG ingestion POST /iclock/cdata?table=OPERLOG creates and updates users', function () {
         $rawOperLog = "PIN=8888\tName=Robert\tPri=0\tCard=33445566\n";
 

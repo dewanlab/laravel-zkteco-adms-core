@@ -222,26 +222,34 @@ class AdmsController
     protected function handleAttLog(Request $request, ZkDevice $device): Response
     {
         $body = (string) $request->getContent();
+        $deviceTimezone = $device->timezone
+            ?? config('zkteco-adms-core.handshake.timezone')
+            ?? config('app.timezone', 'UTC');
+
         $punches = $this->attendanceParser->parse(
             $body,
             $device->serial_number,
-            $device->timezone ?? 'UTC'
+            (string) $deviceTimezone
         );
 
+        $appTimezone = (string) config('app.timezone', 'UTC');
         $insertedCount = 0;
         foreach ($punches as $punch) {
+            $wallClockString = $punch->recordedAt->format('Y-m-d H:i:s');
+            $occurredAt = $punch->recordedAt->copy()->setTimezone($appTimezone);
+
             // Idempotent upsert/create
             $exists = ZkAttendanceLog::where('device_id', $device->id)
                 ->where('pin', $punch->pin)
-                ->where('recorded_at', $punch->recordedAt)
+                ->where('recorded_at', $wallClockString)
                 ->exists();
 
             if (! $exists) {
                 $inserted = ZkAttendanceLog::create([
                     'device_id' => $device->id,
                     'pin' => $punch->pin,
-                    'recorded_at' => $punch->recordedAt,
-                    'occurred_at' => $punch->recordedAt,
+                    'recorded_at' => $wallClockString,
+                    'occurred_at' => $occurredAt,
                     'status' => $punch->state,
                     'verify_mode' => $punch->verifyMode,
                     'work_code' => $punch->workCode,
@@ -456,7 +464,7 @@ class AdmsController
             transFlag: (string) config('zkteco-adms-core.handshake.trans_flag', '1111111111'),
             realtime: (int) config('zkteco-adms-core.handshake.realtime', 1),
             encrypt: (int) config('zkteco-adms-core.handshake.encrypt', 0),
-            timezone: $device->timezone ?? config('zkteco-adms-core.handshake.timezone', 'UTC'),
+            timezone: (! empty($device->timezone)) ? (string) $device->timezone : (string) (config('zkteco-adms-core.handshake.timezone') ?? config('app.timezone', 'UTC')),
         );
 
         return response($config->toWireString(), 200)->header('Content-Type', 'text/plain');

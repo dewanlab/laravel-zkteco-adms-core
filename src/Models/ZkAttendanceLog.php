@@ -18,8 +18,8 @@ use Illuminate\Support\Carbon;
  * to prevent duplicate ingestion during terminal reconnects, buffer flushes, and re-syncs.
  *
  * Tracks verification mode (fingerprint, facial recognition, palm, card, password), punch state
- * (check-in, check-out, overtime, break), terminal timestamp (`recorded_at`), server reception
- * timestamp (`occurred_at`), optional work code, and the original unparsed payload.
+ * (check-in, check-out, overtime, break), terminal wall-clock timestamp (`recorded_at`), normalized
+ * UTC/application instant timestamp (`occurred_at`), optional work code, and the original unparsed payload.
  *
  * Example:
  * ```php

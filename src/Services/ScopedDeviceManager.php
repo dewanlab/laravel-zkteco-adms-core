@@ -66,7 +66,7 @@ class ScopedDeviceManager
      *
      * @param  string  $pin  Employee PIN / ID.
      * @param  string  $name  Employee display name.
-     * @param  int  $privilege  Privilege level (0 = Normal User, 14 = Super Admin).
+     * @param  int|null  $privilege  Privilege level (0 = Normal User, 14 = Super Admin). Null preserves existing DB privilege.
      * @param  string  $card  RFID card number.
      * @param  string  $password  Keypad PIN password.
      * @return ZkDeviceCommand The enqueued command record.
@@ -74,7 +74,7 @@ class ScopedDeviceManager
     public function createUser(
         string $pin,
         string $name,
-        int $privilege = 0,
+        ?int $privilege = null,
         string $card = '',
         string $password = '',
     ): ZkDeviceCommand {

@@ -138,7 +138,7 @@ class ZktecoAdmsCore
      * @param  ZkDevice|string  $device  Device model or serial number string.
      * @param  string  $pin  Employee PIN / ID.
      * @param  string  $name  Employee display name.
-     * @param  int  $privilege  Privilege level (0 = Normal User, 14 = Super Admin).
+     * @param  int|null  $privilege  Privilege level (0 = Normal User, 14 = Super Admin). Null preserves existing DB privilege.
      * @param  string  $card  RFID card number.
      * @param  string  $password  Keypad PIN password.
      * @return ZkDeviceCommand The enqueued command record.
@@ -147,11 +147,14 @@ class ZktecoAdmsCore
         ZkDevice|string $device,
         string $pin,
         string $name,
-        int $privilege = 0,
+        ?int $privilege = null,
         string $card = '',
         string $password = '',
     ): ZkDeviceCommand {
         $zkDevice = $this->resolveDevice($device);
+
+        $existing = ZkUser::where('pin', $pin)->first();
+        $effectivePrivilege = $privilege ?? ($existing !== null ? (int) $existing->privilege : 0);
 
         ZkUser::updateOrCreate(
             ['pin' => $pin],
@@ -159,13 +162,13 @@ class ZktecoAdmsCore
                 'name' => $name,
                 'card_number' => $card !== '' ? $card : null,
                 'password' => $password !== '' ? $password : null,
-                'privilege' => $privilege,
+                'privilege' => $effectivePrivilege,
             ]
         );
 
         return $this->queueManager->enqueue(
             $zkDevice,
-            $this->commandBuilder->updateUser($pin, $name, $privilege, $card, $password),
+            $this->commandBuilder->updateUser($pin, $name, $effectivePrivilege, $card, $password),
             'DATA'
         );
     }
@@ -194,7 +197,10 @@ class ZktecoAdmsCore
             } else {
                 $pin = (string) ($user['pin'] ?? '');
                 $name = (string) ($user['name'] ?? "User {$pin}");
-                $privilege = (int) ($user['privilege'] ?? 0);
+                $existing = ZkUser::where('pin', $pin)->first();
+                $privilege = array_key_exists('privilege', $user) && $user['privilege'] !== null
+                    ? (int) $user['privilege']
+                    : ($existing !== null ? (int) $existing->privilege : 0);
                 $card = (string) ($user['card'] ?? $user['card_number'] ?? '');
                 $password = (string) ($user['password'] ?? '');
 
@@ -227,7 +233,7 @@ class ZktecoAdmsCore
      * @param  ZkDevice|string  $device  Device model or serial number string.
      * @param  string  $pin  User PIN / ID on the terminal.
      * @param  string  $name  Display name of the user.
-     * @param  int  $privilege  Privilege level (0 = Normal User, 14 = Super Administrator).
+     * @param  int|null  $privilege  Privilege level (0 = Normal User, 14 = Super Administrator). Null preserves existing DB privilege.
      * @param  string  $card  RFID card number.
      * @return ZkDeviceCommand The enqueued command record.
      */
@@ -235,7 +241,7 @@ class ZktecoAdmsCore
         ZkDevice|string $device,
         string $pin,
         string $name,
-        int $privilege = 0,
+        ?int $privilege = null,
         string $card = '',
     ): ZkDeviceCommand {
         return $this->createUser($device, $pin, $name, $privilege, $card);

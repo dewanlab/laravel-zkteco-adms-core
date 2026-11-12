@@ -296,4 +296,44 @@ describe('Step 6: Facade & Lifecycle Events Extreme Verification', function () {
             return $event->command->id === $cmd2->id && $event->returnCode === -1002;
         });
     });
+
+    test('createUser, createUsers, and syncUser preserve existing administrator privilege when privilege is null or omitted', function () {
+        $device = ZkDevice::create(['serial_number' => 'DEV_PRIV_PRESERVE']);
+
+        // 1. Existing Administrator (privilege: 14)
+        $admin = ZkUser::create([
+            'pin' => '9001',
+            'name' => 'Root Admin',
+            'privilege' => 14,
+            'card_number' => 'CARD999',
+        ]);
+
+        // Calling createUser without privilege parameter should preserve privilege 14
+        $cmd1 = ZktecoAdms::createUser($device, pin: '9001', name: 'Root Admin Updated');
+        expect($cmd1->command_string)->toContain('Pri=14')
+            ->and($admin->fresh()?->privilege)->toBe(14)
+            ->and($admin->fresh()?->name)->toBe('Root Admin Updated');
+
+        // Calling syncUser without privilege parameter should preserve privilege 14
+        $cmd2 = ZktecoAdms::syncUser($device, pin: '9001', name: 'Root Admin Synced');
+        expect($cmd2->command_string)->toContain('Pri=14')
+            ->and($admin->fresh()?->privilege)->toBe(14)
+            ->and($admin->fresh()?->name)->toBe('Root Admin Synced');
+
+        // Bulk createUsers without privilege key preserves existing privilege 14
+        $bulkCmds = ZktecoAdms::createUsers($device, [
+            ['pin' => '9001', 'name' => 'Root Admin Bulk'],
+            ['pin' => '9002', 'name' => 'New Standard User'],
+        ]);
+        expect($bulkCmds)->toHaveCount(2)
+            ->and($bulkCmds[0]->command_string)->toContain('Pri=14')
+            ->and($bulkCmds[1]->command_string)->toContain('Pri=0')
+            ->and($admin->fresh()?->privilege)->toBe(14)
+            ->and(ZkUser::where('pin', '9002')->first()?->privilege)->toBe(0);
+
+        // Explicitly passing a new privilege should update it
+        $cmdExplicit = ZktecoAdms::createUser($device, pin: '9001', name: 'Demoted User', privilege: 0);
+        expect($cmdExplicit->command_string)->toContain('Pri=0')
+            ->and($admin->fresh()?->privilege)->toBe(0);
+    });
 });

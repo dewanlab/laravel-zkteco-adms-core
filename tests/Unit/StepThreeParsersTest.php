@@ -40,6 +40,37 @@ RAW;
             ->and($punches[2]->state)->toBe(PunchState::BreakOut);
     });
 
+    test('AttendanceParser skips PIN 0, empty timestamps, and access control telemetry status codes', function () {
+        $parser = new AttendanceParser;
+
+        $payload = implode("\n", [
+            // Valid employee punch
+            "1001\t2026-10-02 08:30:00\t0\t1\t0",
+            // Access control door closed sensor event (PIN 0, status 201)
+            "0\t2026-10-02 08:30:10\t201\t1\t0",
+            // Malformed line with empty timestamp
+            "0\t\t0\t0\t0",
+            // Valid PIN but empty timestamp (should not evaluate to now())
+            "1002\t   \t0\t1\t0",
+            // Access control door opened event (status 200)
+            "1003\t2026-10-02 08:31:00\t200\t1\t0",
+            // Access control exit button event (status 202)
+            "1004\t2026-10-02 08:31:30\t202\t1\t0",
+            // Access control door forced open alarm (status 220)
+            "1005\t2026-10-02 08:32:00\t220\t1\t0",
+            // Another valid employee punch
+            "1006\t2026-10-02 08:35:00\t1\t2\t0",
+        ]);
+
+        $punches = $parser->parse($payload, serialNumber: 'TEST_SN');
+
+        expect($punches)->toHaveCount(2)
+            ->and($punches[0]->pin)->toBe('1001')
+            ->and($punches[0]->state)->toBe(PunchState::CheckIn)
+            ->and($punches[1]->pin)->toBe('1006')
+            ->and($punches[1]->state)->toBe(PunchState::CheckOut);
+    });
+
     test('CommandAckParser parses single and multiline responses including firmware errors', function () {
         $parser = new CommandAckParser;
 

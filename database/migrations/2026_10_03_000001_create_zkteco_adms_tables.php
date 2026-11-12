@@ -34,7 +34,7 @@ return new class extends Migration
             $table->string('device_type')->nullable();
             $table->string('push_version')->nullable();
             $table->string('firmware_version')->nullable();
-            $table->string('timezone')->default('UTC');
+            $table->string('timezone')->nullable();
             $table->json('options')->nullable();
             $table->timestamps();
 

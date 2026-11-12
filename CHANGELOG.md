@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Discard hardware access control relay telemetry (`PIN = '0'` and event codes $\ge 200$, e.g. door sensor 201) in `AttendanceParser` to prevent ghost attendance log ingestion.
+- Guard against empty or whitespace timestamps in `AttendanceParser` before parsing to prevent falling back to `Carbon::now()`.
+
 ## [1.0.0] - 2026-10-17
 
 ### Added

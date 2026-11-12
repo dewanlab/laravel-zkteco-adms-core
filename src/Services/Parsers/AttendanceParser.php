@@ -23,7 +23,8 @@ use Exception;
  *
  * Features & resilience handling:
  * - Multi-platform Line Breaks: Normalizes Windows (\r\n), legacy Mac (\r), and Unix (\n) line endings.
- * - Resilient Ingestion: Safely skips blank lines, malformed records (less than 2 tokens), empty PINs, and unparseable timestamps.
+ * - Resilient Ingestion: Safely skips blank lines, malformed records (less than 2 tokens), empty or PIN 0 records, empty timestamps, and unparseable dates.
+ * - Access Control Telemetry Filtering: Discards hardware relay and door sensor events (PIN 0 or status codes >= 200 such as Door Closed 201, Door Opened 200, Exit Button 202, Alarm 220).
  * - Timezone Normalization: Parses the terminal's wall-clock timestamp using the device's configured timezone, falling back to UTC if invalid.
  * - Enum Conversion: Translates hardware status and verification codes into strongly-typed PunchState and VerifyMode enums.
  *
@@ -73,14 +74,23 @@ class AttendanceParser
             }
 
             $pin = trim($fields[0]);
-            if ($pin === '') {
+            if ($pin === '' || $pin === '0') {
                 continue;
             }
 
             $rawTime = trim($fields[1]);
+            if ($rawTime === '') {
+                continue;
+            }
+
             try {
                 $recordedAt = CarbonImmutable::parse($rawTime, $tz);
             } catch (Exception) {
+                continue;
+            }
+
+            $rawState = isset($fields[2]) ? trim($fields[2]) : '';
+            if (is_numeric($rawState) && (int) $rawState >= 200) {
                 continue;
             }
 
